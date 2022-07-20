@@ -4,8 +4,7 @@ k      = 25
 epochs = 500
 
 mini_imagenet = r"/home/ted/Desktop/mini_imagenet"
-imagenet      = r"/home/ted/Desktop/imagenet"
-code          = r"/home/ted/Desktop/mini_imagenet_classifier"
+code          = r"/home/ted/Desktop/mini_imagenet_models"
 
 import torch
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -24,7 +23,8 @@ def get_free_mem(string = ""):
     r = torch.cuda.memory_reserved(0)
     a = torch.cuda.memory_allocated(0)
     f = r-a  # free inside reserved
-    print("{}: \t{}.".format(string, round(log10(f),2)))
+    try: print("{}: \t{}, {}.".format(string, round(log10(f),2), f))
+    except: print("{}: \t{}, {}.".format(string, "()", f))
 
 # Remove from GPU memory.
 def delete_these(verbose = False, *args):
@@ -38,16 +38,19 @@ def delete_these(verbose = False, *args):
 import os
 os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE" 
 
+os.chdir(code)
 if not os.path.exists('plots'): os.makedirs('plots')
-if not os.path.exists('trained'): os.makedirs('trained')
-
 models = os.listdir("models")
 models = [m[6:-3] for m in models if m != "__pycache__"]
 models.sort()
+
+os.chdir(mini_imagenet)
+if not os.path.exists('trained'): os.makedirs('trained')
 trained_models = os.listdir("trained")
 trained_models = [m[:-3] for m in trained_models if m != "__pycache__"]
 trained_models.sort()
 
+os.chdir(code)
 for m in models:
     if not os.path.exists('plots/{}'.format(m)): os.makedirs('plots/{}'.format(m))
 
@@ -129,7 +132,7 @@ def plot_boxes_loss(train_losses, test_losses):
     plt.title("Model losses")
     
     get_betweens(k_test)
-    plt.legend([train["boxes"][0], test["boxes"][0]], ['Train losses', 'Test losses'], loc='lower left')
+    plt.legend([train["boxes"][0], test["boxes"][0]], ['Train losses', 'Test losses'], loc='upper left')
 
     plt.savefig("plots/boxes_loss")
     plt.show()
@@ -165,7 +168,7 @@ def plot_boxes_acc(train_acc, test_acc):
     plt.title("Model accuracies")
     
     get_betweens(k_test)
-    plt.legend([train["boxes"][0], test["boxes"][0]], ['Train accuracies', 'Test accuracies'], loc='lower left')
+    plt.legend([train["boxes"][0], test["boxes"][0]], ['Train accuracies', 'Test accuracies'], loc='upper left')
     
     minimums = [min(l) for l in list(train_acc.values()) + list(test_acc.values())]
     minimum = min(minimums)
@@ -176,9 +179,15 @@ def plot_boxes_acc(train_acc, test_acc):
     plt.close()
     
 def save_model(model):
+    model = model.to("cpu")
+    os.chdir(mini_imagenet)
     torch.save(model.cpu().state_dict(), "trained/{}.pt".format(model.name))
+    delete_these(False, model)
+    os.chdir(code)
     
 def load_model(model):
+    os.chdir(mini_imagenet)
     model.load_state_dict(torch.load("trained/{}.pt".format(model.name)))
+    os.chdir(code)
     return(model)
 # %%

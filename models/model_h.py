@@ -3,6 +3,7 @@ from math import pi
 
 import torch
 from torch import nn 
+import torchgan.layers as gnn
 from torchvision.transforms.functional import resize
 from torch.optim import Adam
 import kornia
@@ -24,7 +25,7 @@ def shared_cnn(in_channels = 3):
             kernel_size = 3,
             padding = 1,
             padding_mode = "reflect"),
-        nn.Dropout(.2),
+        nn.Dropout(.3),
         nn.PReLU(),
         nn.MaxPool2d(kernel_size = 2),
         nn.Conv2d(
@@ -33,7 +34,7 @@ def shared_cnn(in_channels = 3):
             kernel_size = 3,
             padding = 1,
             padding_mode = "reflect"),
-        nn.Dropout(.2),
+        nn.Dropout(.3),
         nn.PReLU(),
         nn.MaxPool2d(kernel_size = 2))
     return(cnn)
@@ -57,23 +58,13 @@ class H(nn.Module):
         self.cnn_ycbcr  = shared_cnn()
         self.cnn_gray   = shared_cnn(1)
         
-        self.cnn_all = nn.Sequential(
-            nn.Conv2d(
-                in_channels = 64 * 6,
-                out_channels = 64,
-                kernel_size = 3,
-                padding = 1,
-                padding_mode = "reflect"),
-            nn.Dropout(.2),
-            nn.PReLU())
-        
         example = torch.zeros((1, 3, 84, 84))
         example = self.cnn_rgb(example).flatten(1)
         quantity = example.shape[-1]
         
         self.lin = nn.Sequential(
             nn.Linear(
-                in_features = quantity,
+                in_features = quantity * 6,
                 out_features = 256),
             nn.PReLU(),
             nn.Linear(
@@ -88,7 +79,6 @@ class H(nn.Module):
             self.cnn_xyz.apply(   init_weights)
             self.cnn_ycbcr.apply( init_weights)
             self.cnn_gray.apply(  init_weights)
-            self.cnn_all.apply(   init_weights)
             self.lin.apply(       init_weights)
         self.opt = Adam(self.parameters())
         
@@ -109,16 +99,23 @@ class H(nn.Module):
         xyz    = kornia.color.rgb_to_xyz(x)*2   - 1
         ycbcr  = kornia.color.rgb_to_ycbcr(x)*2 - 1
         gray   = kornia.color.rgb_to_grayscale(x)*2 - 1
+        
+        if(self.training):
+            rgb   += torch.normal(0, 0.2, size=rgb.size()).to(device) 
+            hsv   += torch.normal(0, 0.2, size=hsv.size()).to(device) 
+            hls   += torch.normal(0, 0.2, size=hls.size()).to(device) 
+            xyz   += torch.normal(0, 0.2, size=xyz.size()).to(device) 
+            ycbcr += torch.normal(0, 0.2, size=ycbcr.size()).to(device) 
+            gray  += torch.normal(0, 0.2, size=gray.size()).to(device) 
 
-        rgb    = self.cnn_rgb(rgb)
-        hsv    = self.cnn_hsv(hsv)
-        hls    = self.cnn_hls(hls)
-        xyz    = self.cnn_xyz(xyz)
-        ycbcr  = self.cnn_ycbcr(ycbcr)
-        gray   = self.cnn_gray(gray)
+        rgb    = self.cnn_rgb(rgb      ).flatten(1)
+        hsv    = self.cnn_hsv(hsv      ).flatten(1)
+        hls    = self.cnn_hls(hls      ).flatten(1)
+        xyz    = self.cnn_xyz(xyz      ).flatten(1)
+        ycbcr  = self.cnn_ycbcr(ycbcr  ).flatten(1)
+        gray   = self.cnn_gray(gray    ).flatten(1)
         
         x = torch.cat([rgb, hsv, hls, xyz, ycbcr, gray], 1)
-        x = self.cnn_all(x).flatten(1)
         
         y = self.lin(x)
         delete_these(False, x, rgb, hsv, hls, xyz, ycbcr, gray)

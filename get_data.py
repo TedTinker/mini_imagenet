@@ -8,10 +8,10 @@ from random import shuffle, seed
 import itertools
 from_iterable = itertools.chain.from_iterable
 
-from utils import k, plot_image, mini_imagenet, imagenet
+from utils import k, plot_image, mini_imagenet
+os.chdir(mini_imagenet)
 
 def load():
-    os.chdir(mini_imagenet)
     with open("train.pkl",'rb') as f: train = pickle.load(f)
     with open("test.pkl",'rb')  as f: test  = pickle.load(f)
     with open("val.pkl",'rb')   as f: val   = pickle.load(f)
@@ -24,7 +24,6 @@ val_x,   val_y   = torch.from_numpy(val["image_data"]),   val["class_dict"]
 
 classes = list(train_y.keys()) + list(test_y.keys()) + list(val_y.keys())
 classes.sort()
-os.chdir(imagenet)
 names = pd.read_csv('mapping.txt', sep='\0',header=None)
 class_to_name   = {c[:9] : c[10:].split(',')[0] for c in names[0]}
 class_to_number = {c : i for i, c in enumerate(classes)}
@@ -60,8 +59,6 @@ def get_batch(k_, batch_size = 128, test = False):
         indexes = test_indexes[k_]
         shuffle(indexes)
         batch = indexes[:batch_size]
-        x = xs[batch]
-        y = ys[batch]
         x = xs[batch]
         y = ys[batch]
         return(x, y)
