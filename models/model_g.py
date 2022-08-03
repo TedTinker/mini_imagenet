@@ -64,10 +64,6 @@ class G(nn.Module):
         self.lin = nn.Sequential(
             nn.Linear(
                 in_features = quantity * 6,
-                out_features = 256),
-            nn.PReLU(),
-            nn.Linear(
-                in_features = 256,
                 out_features = 100),
             nn.LogSoftmax(1))
         

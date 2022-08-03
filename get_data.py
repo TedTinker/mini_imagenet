@@ -40,27 +40,27 @@ val_y   = val_y.reshape(  (val_y.shape[0]   *600))
 xs = torch.cat([train_x, test_x, val_x])/255
 ys = torch.cat([train_y, test_y, val_y])
 data_len = len(xs)
-
-seed(100)
-indexes = [i for i in range(len(xs))]
-shuffle(indexes)
+    
+    
+    
+indexes = [i for i in range(24*25)]
 
 test_indexes = []
 for i in range(k):
-    test_indexes.append(indexes[i*data_len//k : (i+1)*data_len//k])
+    test_k_indexes = []
+    for j in range(int(data_len/k)):
+        test_k_indexes.append(i+k*j)
+    test_indexes.append(test_k_indexes)
 train_indexes = []
 for k_ in range(k):
     train_indexes.append(list(from_iterable(test_indexes[k__] for k__ in range(k) if k__ != k_)))
 
 
-
 def get_batch(k_, batch_size = 128, test = False):
     if(test):
         indexes = test_indexes[k_]
-        shuffle(indexes)
-        batch = indexes[:batch_size]
-        x = xs[batch]
-        y = ys[batch]
+        x = xs[indexes]
+        y = ys[indexes]
         return(x, y)
     indexes = train_indexes[k_]
     shuffle(indexes)
@@ -76,5 +76,6 @@ if __name__ == "__main__":
     print(x.shape, y.shape)
     for i in range(10):
         plot_image(x[i], number_to_name[y[i].item()])
-
+    for i in range(100):
+        print(i, " : ", len(y[y == i]))
 # %%

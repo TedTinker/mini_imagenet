@@ -16,16 +16,21 @@ except:
     def delete_these(verbose, *args): pass
     
     
+
     
-def shared_cnn(in_channels = 3):
-    cnn = nn.Sequential(
+    
+class Color(nn.Module):
+    def __init__(self, channels = 3):
+        super().__init__()
+        
+        self.cnn = nn.Sequential(
         nn.Conv2d(
-            in_channels = in_channels,
+            in_channels = channels,
             out_channels = 64,
             kernel_size = 3,
             padding = 1,
             padding_mode = "reflect"),
-        nn.Dropout(.3),
+        nn.Dropout(.2),
         nn.PReLU(),
         nn.MaxPool2d(kernel_size = 2),
         nn.Conv2d(
@@ -34,11 +39,28 @@ def shared_cnn(in_channels = 3):
             kernel_size = 3,
             padding = 1,
             padding_mode = "reflect"),
-        nn.Dropout(.3),
+        nn.Dropout(.2),
         nn.PReLU(),
         nn.MaxPool2d(kernel_size = 2))
-    return(cnn)
-    
+        
+        example = torch.zeros((1, channels, 84, 84))
+        example = self.cnn(example).flatten(1)
+        quantity = example.shape[-1]
+        
+        self.lin = nn.Sequential(
+            nn.Linear(
+                in_features = quantity,
+                out_features = 256),
+            nn.PReLU())
+        
+        if(utils): 
+            self.cnn.apply(init_weights)
+            self.lin.apply(init_weights)
+        
+    def forward(self, x):
+        x = self.cnn(x).flatten(1)
+        x = self.lin(x)
+        return(x)
     
     
 class H(nn.Module):
@@ -51,35 +73,21 @@ class H(nn.Module):
         self.name = "h{}{}_{}".format("a", 1, str(k+1).zfill(3))
         self.k = k
                 
-        self.cnn_rgb    = shared_cnn()
-        self.cnn_hsv    = shared_cnn()
-        self.cnn_hls    = shared_cnn()
-        self.cnn_xyz    = shared_cnn()
-        self.cnn_ycbcr  = shared_cnn()
-        self.cnn_gray   = shared_cnn(1)
-        
-        example = torch.zeros((1, 3, 84, 84))
-        example = self.cnn_rgb(example).flatten(1)
-        quantity = example.shape[-1]
+        self.cnn_rgb    = Color()
+        self.cnn_hsv    = Color()
+        self.cnn_hls    = Color()
+        self.cnn_xyz    = Color()
+        self.cnn_ycbcr  = Color()
+        self.cnn_gray   = Color(1)
         
         self.lin = nn.Sequential(
             nn.Linear(
-                in_features = quantity * 6,
-                out_features = 256),
-            nn.PReLU(),
-            nn.Linear(
-                in_features = 256,
+                in_features = 256 * 6,
                 out_features = 100),
             nn.LogSoftmax(1))
         
         if(utils): 
-            self.cnn_rgb.apply(   init_weights)
-            self.cnn_hsv.apply(   init_weights)
-            self.cnn_hls.apply(   init_weights)
-            self.cnn_xyz.apply(   init_weights)
-            self.cnn_ycbcr.apply( init_weights)
-            self.cnn_gray.apply(  init_weights)
-            self.lin.apply(       init_weights)
+            self.lin.apply(init_weights)
         self.opt = Adam(self.parameters())
         
     def forward(self, x):
@@ -108,12 +116,12 @@ class H(nn.Module):
             ycbcr += torch.normal(0, 0.2, size=ycbcr.size()).to(device) 
             gray  += torch.normal(0, 0.2, size=gray.size()).to(device) 
 
-        rgb    = self.cnn_rgb(rgb      ).flatten(1)
-        hsv    = self.cnn_hsv(hsv      ).flatten(1)
-        hls    = self.cnn_hls(hls      ).flatten(1)
-        xyz    = self.cnn_xyz(xyz      ).flatten(1)
-        ycbcr  = self.cnn_ycbcr(ycbcr  ).flatten(1)
-        gray   = self.cnn_gray(gray    ).flatten(1)
+        rgb    = self.cnn_rgb(rgb    )
+        hsv    = self.cnn_hsv(hsv    )
+        hls    = self.cnn_hls(hls    )
+        xyz    = self.cnn_xyz(xyz    )
+        ycbcr  = self.cnn_ycbcr(ycbcr)
+        gray   = self.cnn_gray(gray  )
         
         x = torch.cat([rgb, hsv, hls, xyz, ycbcr, gray], 1)
         

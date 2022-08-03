@@ -28,11 +28,17 @@ def train_test(model, E, batch_size = 128, show_after = 999999):
         with torch.no_grad():
             model.eval()
             x, y = get_batch(k_ = model.k, batch_size = batch_size, test = True)
-            predicted = model(x)
-            loss = F.nll_loss(predicted, y)
-            test_losses.append(loss.item())
-            accurate = [True if torch.argmax(p).item() == y[i].item() else False for i, p in enumerate(predicted)]
-            test_acc.append(100*sum(accurate)/len(accurate))
+            total_loss = 0
+            accurates = []
+            for x_, y_ in zip(torch.split(x, len(x)//25), torch.split(y, len(y)//25)):
+                predicted = model(x_)
+                loss = F.nll_loss(predicted, y_)
+                total_loss += loss.item()
+                accurate = [True if torch.argmax(p).item() == y_[i].item() else False for i, p in enumerate(predicted)]
+                accurates += accurate
+                delete_these(False, x_, y_, predicted, loss)
+            test_losses.append(total_loss)
+            test_acc.append(100*sum(accurates)/len(accurates))
 
             if(e%show_after == 0 or e==epochs):
                 plot_loss_acc(model, e, train_losses, test_losses, train_acc, test_acc)
@@ -57,11 +63,16 @@ def train_test_short(model, batch_size = 128):
 
         model.eval()
         x, y = get_batch(k_ = model.k, batch_size = batch_size, test = True)
-        predicted = model(x)
-        loss = F.nll_loss(predicted, y)
-        test_loss = loss.item()
-        accurate = [True if torch.argmax(p).item() == y[i].item() else False for i, p in enumerate(predicted)]
-        test_acc = 100*sum(accurate)/len(accurate)
+        test_loss = 0
+        accurates = []
+        for x_, y_ in zip(torch.split(x, len(x)//25), torch.split(y, len(y)//25)):
+            predicted = model(x_)
+            loss = F.nll_loss(predicted, y_)
+            test_loss += loss.item()
+            accurate = [True if torch.argmax(p).item() == y_[i].item() else False for i, p in enumerate(predicted)]
+            accurates += accurate
+            delete_these(False, x_, y_, predicted, loss)
+        test_acc = 100*sum(accurates)/len(accurates)
         
     torch.cuda.synchronize()
     return(train_loss, test_loss, train_acc, test_acc)
