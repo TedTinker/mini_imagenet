@@ -86,6 +86,54 @@ def plot_loss_acc(model, e, train_losses, test_losses, train_acc, test_acc):
     #plt.show()
     plt.close()
     
+letters_to_name = {
+    "aa1" : "Linear_21",
+    "ab1" : "Linear_42",
+    "ac1" : "Linear_84",
+    
+    "ba1" : "Multilayer_21_128",
+    "ba2" : "Multilayer_21_256",
+    "ba3" : "Multilayer_21_512",
+    "bb1" : "Multilayer_42_128",
+    "bb2" : "Multilayer_42_256",
+    "bb3" : "Multilayer_42_512",
+    "bc1" : "Multilayer_84_128",
+    "bc2" : "Multilayer_84_256",
+    "bc3" : "Multilayer_84_512",
+    
+    "ca1" : "Multilayer_2_21_128",
+    "ca2" : "Multilayer_2_21_256",
+    "ca3" : "Multilayer_2_21_512",
+    "cb1" : "Multilayer_2_42_128",
+    "cb2" : "Multilayer_2_42_256",
+    "cb3" : "Multilayer_2_42_512",
+    "cc1" : "Multilayer_2_84_128",
+    "cc2" : "Multilayer_2_84_256",
+    "cc3" : "Multilayer_2_84_512",
+    
+    "da1" : "Conv_42_4",
+    "da2" : "Conv_42_16",
+    "da3" : "Conv_42_32",
+    "da4" : "Conv_42_64",
+    "db1" : "Conv_84_4",
+    "db2" : "Conv_84_16",
+    "db3" : "Conv_84_32",
+    "db4" : "Conv_84_64",
+    
+    "ea1" : "Conv_2_4",
+    "ea2" : "Conv_2_16",
+    "ea3" : "Conv_2_32",
+    "ea4" : "Conv_2_64",
+    
+    "fa1" : "Conv_3_4",
+    "fa2" : "Conv_3_16",
+    "fa3" : "Conv_3_32",
+    "fa4" : "Conv_3_64",
+    
+    "ga1" : "Colorspace",
+    "ha1" : "Colorspace_2"
+}
+    
 def get_betweens(k_test):
     between_letters = []
     between_subletters = []
@@ -97,66 +145,36 @@ def get_betweens(k_test):
         if(name[:-1] != ongoing_letters):
             between_subletters.append(i+.5)
             ongoing_letters = name[:-1]
-    for x in between_letters:
-        plt.axvline(x=x, color = "black", linewidth = 2, linestyle = "-")
-    for x in between_subletters:
-        plt.axvline(x=x, color = "black", linewidth = 1, linestyle = "--")
+    for y in between_letters:
+        plt.axhline(y=y, color = "black", linewidth = 2, linestyle = "-")
+    for y in between_subletters:
+        plt.axhline(y=y, color = "black", linewidth = 1, linestyle = "--")
     
-def plot_boxes_loss(train_losses, test_losses):
-    plt.figure(figsize=(20,7))
-    train_c = (0,0,1,.1)
-    k_train = list(train_losses.keys())
-    v_train = list(train_losses.values())
-    k_train, v_train = zip(*sorted(zip(k_train, v_train)))
-    train = plt.boxplot(v_train, vert = True, widths = .75,
-        patch_artist=True,
-        boxprops=dict(facecolor=train_c, color=train_c),
-        capprops=dict(color=train_c),
-        whiskerprops=dict(color=train_c),
-        flierprops=dict(color=train_c, markeredgecolor=train_c),
-        medianprops=dict(color=train_c))
+def plot_boxes_acc(train_acc, test_acc, training_too = False):
+    plt.figure(figsize=(8,20))
     
-    test_c = (1,0,0,.5)
-    k_test = list(test_losses.keys())
-    v_test = list(test_losses.values())
-    k_test, v_test = zip(*sorted(zip(k_test, v_test)))
-    test = plt.boxplot(v_test, vert = True, widths = .25,
-        patch_artist=True,
-        boxprops=dict(facecolor=test_c, color=test_c),
-        capprops=dict(color=test_c),
-        whiskerprops=dict(color=test_c),
-        flierprops=dict(color=test_c, markeredgecolor=test_c),
-        medianprops=dict(color=test_c))
-    
-    plt.xticks(ticks = [i for i in range(1, len(k_test)+1)], labels = k_test)
-    plt.title("Model losses")
-    
-    get_betweens(k_test)
-    plt.legend([train["boxes"][0], test["boxes"][0]], ['Train losses', 'Test losses'], loc='upper left')
-
-    plt.savefig("plots/boxes_loss")
-    plt.show()
-    plt.close()
-    
-def plot_boxes_acc(train_acc, test_acc):
-    plt.figure(figsize=(20,7))
-    train_c = (0,0,1,.1)
-    k_train = list(train_acc.keys())
-    v_train = list(train_acc.values())
-    k_train, v_train = zip(*sorted(zip(k_train, v_train)))
-    train = plt.boxplot(v_train, vert = True, widths = .75,
-        patch_artist=True,
-        boxprops=dict(facecolor=train_c, color=train_c),
-        capprops=dict(color=train_c),
-        whiskerprops=dict(color=train_c),
-        flierprops=dict(color=train_c, markeredgecolor=train_c),
-        medianprops=dict(color=train_c))
+    if(training_too):
+        train_c = (0,0,1,.1)
+        k_train = list(train_acc.keys())
+        v_train = list(train_acc.values())
+        k_train, v_train = zip(*sorted(zip(k_train, v_train)))
+        k_train = list(k_train); k_train.reverse()
+        v_train = list(v_train); v_train.reverse()
+        train = plt.boxplot(v_train, vert = False, widths = .25,
+            patch_artist=True,
+            boxprops=dict(facecolor=train_c, color=train_c),
+            capprops=dict(color=train_c),
+            whiskerprops=dict(color=train_c),
+            flierprops=dict(color=train_c, markeredgecolor=train_c),
+            medianprops=dict(color=train_c))
     
     test_c = (1,0,0,.5)
     k_test = list(test_acc.keys())
     v_test = list(test_acc.values())
     k_test, v_test = zip(*sorted(zip(k_test, v_test)))
-    test = plt.boxplot(v_test, vert = True, widths = .25,
+    k_test = list(k_test); k_test.reverse()
+    v_test = list(v_test); v_test.reverse()
+    test = plt.boxplot(v_test, vert = False, widths = .75,
         patch_artist=True,
         boxprops=dict(facecolor=test_c, color=test_c),
         capprops=dict(color=test_c),
@@ -164,17 +182,25 @@ def plot_boxes_acc(train_acc, test_acc):
         flierprops=dict(color=test_c, markeredgecolor=test_c),
         medianprops=dict(color=test_c))
     
-    plt.xticks(ticks = [i for i in range(1, len(k_test)+1)], labels = k_test)
+    label_list = [letters_to_name[k] for k in k_test]
+    
+    plt.yticks(ticks = [i for i in range(1, len(k_test)+1)], labels = label_list)
     plt.title("Model accuracies")
     
     get_betweens(k_test)
-    plt.legend([train["boxes"][0], test["boxes"][0]], ['Train accuracies', 'Test accuracies'], loc='upper left')
+    if(training_too):
+        plt.legend([train["boxes"][0], test["boxes"][0]], ['Train accuracies', 'Test accuracies'], loc='upper right')
+    else:
+        plt.legend([test["boxes"][0]], ['Test accuracies'], loc='upper right')
     
     minimums = [min(l) for l in list(train_acc.values()) + list(test_acc.values())]
     minimum = min(minimums)
     #plt.ylim((minimum-3,100))
 
-    plt.savefig("plots/boxes_acc")
+    plt.axvline(x=0, color = "black", linewidth = 2)
+    plt.axvline(x=1, color = "gray",  linewidth = 1, linestyle = "--")
+        
+    plt.savefig("plots/boxes_acc{}".format("_with_training" if training_too else ""), bbox_inches='tight')
     plt.show()
     plt.close()
     

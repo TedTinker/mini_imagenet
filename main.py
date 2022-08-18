@@ -8,7 +8,7 @@ from math import log10
 import itertools
 from_iterable = itertools.chain.from_iterable
 
-from utils import code, device, trained_models, load_model, plot_boxes_loss, plot_boxes_acc, k, epochs, get_free_mem, delete_these
+from utils import code, device, trained_models, load_model, plot_boxes_acc, k, epochs, get_free_mem, delete_these
 from train_test import train_test, train_test_short
 
 os.chdir(code)
@@ -35,6 +35,8 @@ train_losses = {m : [] for m in model_names}
 test_losses  = {m : [] for m in model_names}
 train_acces  = {m : [] for m in model_names}
 test_acces   = {m : [] for m in model_names}
+
+#%%
 
 def get_n_params(model):
     pp=0
@@ -82,6 +84,6 @@ for list, name in zip(model_lists, model_names):
             M.update()
 get_free_mem("DONE")
 
-plot_boxes_loss(train_losses, test_losses)
 plot_boxes_acc(train_acces, test_acces)
+plot_boxes_acc(train_acces, test_acces, True)
 # %%
